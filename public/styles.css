@@ -1976,6 +1976,7 @@ html[data-theme="light"] .np-tab.active {
 .np-art-wrap {
   width: min(56vw, 360px);
   aspect-ratio: 1;
+  margin-top: 32px;
   filter: drop-shadow(0 28px 50px rgba(0, 0, 0, 0.55));
   transition: transform 0.45s ease;
 }

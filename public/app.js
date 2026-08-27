@@ -1301,12 +1301,17 @@ function previewSong(song) {
 function openSongNowPlaying(song) {
   if (!song || !song.videoId) return;
   const same = Player.current && Player.current.videoId === song.videoId;
-  if (!Player.current) {
+  if (!Player.current || !same) {
     playSong(song);
-  } else if (!same) {
-    previewSong(song);
   } else {
     Player.pending = null;
+    if (Player.cued) {
+      startCurrent();
+      if (!Player.queue.some((q, i) => i > Player.index && !q._user)) fetchQueue(song);
+    } else if (Player.yt && Player.ready) {
+      const st = Player.yt.getPlayerState && Player.yt.getPlayerState();
+      if (st !== YT.PlayerState.PLAYING) Player.yt.playVideo();
+    }
     renderNowPlaying();
     updateLikeButtons();
     renderPlayButtons();
@@ -2605,6 +2610,33 @@ $('#miniplayer').addEventListener('click', (e) => {
     const dy = e.changedTouches[0].clientY - startY;
     if (dy > 90 && window.innerWidth < 1100) closeNowPlaying();
   }, { passive: true });
+})();
+
+(() => {
+  const artWrap = $('.np-art-wrap');
+  if (artWrap) {
+    let lastTap = 0;
+    artWrap.addEventListener('click', (e) => {
+      const now = Date.now();
+      const dt = now - lastTap;
+      lastTap = now;
+      if (dt > 0 && dt < 400) {
+        if (!Player.yt || !Player.ready) return;
+        const rect = artWrap.getBoundingClientRect();
+        const mid = rect.left + rect.width / 2;
+        const cur = Player.yt.getCurrentTime() || 0;
+        const dur = Player.yt.getDuration() || 0;
+        if (e.clientX > mid) {
+          Player.yt.seekTo(Math.min(dur, cur + 10), true);
+          toast('⏩ +10s');
+        } else {
+          Player.yt.seekTo(Math.max(0, cur - 10), true);
+          toast('⏪ -10s');
+        }
+        lastTap = 0;
+      }
+    });
+  }
 })();
 
 /* ================= floating widget / Picture-in-Picture ================= */
